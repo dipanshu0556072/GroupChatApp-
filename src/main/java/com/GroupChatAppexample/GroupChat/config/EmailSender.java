@@ -44,23 +44,25 @@ public class EmailSender
   }
 
     //verify userOTP
-    public ResponseEntity<?>verifyEmailOTP(String emailID){
-        try{
+    public ResponseEntity<?> verifyEmailOTP(String emailID, String userEnteredOTP) {
+        try {
             String key = "OTP:" + emailID;
             String storedOTP = redisTemplate.opsForValue().get(key);
-            // OTP not found or expired
-            if(storedOTP==null){
-              return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body("OTP has expired. Please request a new one.");
+
+            if (storedOTP == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("OTP has expired. Please request a new one.");
             }
-            // Incorrect OTP
-            if(!storedOTP.equals(storedOTP)){
+
+            if (!storedOTP.equals(userEnteredOTP)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Incorrect OTP entered");
             }
-            // Optionally delete OTP after successful verification
+
             redisTemplate.delete(key);
             userService.createUserAccount(emailID);
             return ResponseEntity.status(HttpStatus.OK).body("OTP verified successfully!");
-        }catch(Exception e){ throw new RuntimeException("Encountering error while verifying OTP to:"+emailID);}
+        } catch (Exception e) {
+            throw new RuntimeException("Encountering error while verifying OTP for: " + emailID);
+        }
     }
 
 

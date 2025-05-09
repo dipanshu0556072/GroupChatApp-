@@ -56,6 +56,13 @@
 			<version>1.18.30</version>
 			<scope>provided</scope>
 		</dependency>
+
+		<!--auth2 Login-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
+		</dependency>
+
 		<!-- Test -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

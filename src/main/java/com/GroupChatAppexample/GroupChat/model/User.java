@@ -4,6 +4,8 @@ import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -19,4 +21,5 @@ public class User {
     private String bio;
     private LocalDateTime createdTime;
     private LocalDateTime updatedTime;
+
 }
