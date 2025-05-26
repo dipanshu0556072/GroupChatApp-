@@ -1,6 +1,7 @@
 package com.GroupChatAppexample.GroupChat.service;
 
 import com.GroupChatAppexample.GroupChat.config.EmailSender;
+import com.GroupChatAppexample.GroupChat.config.Roles;
 import com.GroupChatAppexample.GroupChat.model.User;
 import com.GroupChatAppexample.GroupChat.repo.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ public class UserService {
     @Autowired
     private UserRepo userRepo;
 
+
     // send OTP to the user
     public ResponseEntity<?> sendOTP(String emailID) {
         try {
@@ -32,12 +34,111 @@ public class UserService {
             if (userRepo.findByEmailId(emailID).isPresent()) {
                 return ResponseEntity.status(HttpStatus.IM_USED).body("User already exists with this emailID: " + emailID);
             }
-            User user = new User();
-            user.setEmailId(emailID);
+
+            User user = User.builder()
+                    .emailId(emailID)
+                    .userRole(Roles.User.toString())
+                    .build();
+
             userRepo.save(user);
             return ResponseEntity.status(HttpStatus.CREATED).body("User created in DB with emailID: " + emailID);
         } catch (Exception e) {
             throw new RuntimeException("Already existing user a/c with emailID: " + emailID);
         }
     }
+
+    //send Request
+    public ResponseEntity<?> sendRequest(String fromId, String toId){
+         try{
+            if(fromId.equals(toId)){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Can not send request to yourself.");
+            }
+           User userFrom=userRepo.findById(fromId).orElseThrow(()->new RuntimeException("Sender not found!"));
+             User userTo=userRepo.findById(toId).orElseThrow(()->new RuntimeException("Receiver not found!"));
+
+             userFrom.getSendRequest().add(toId);
+             userTo.getInboxRequest().add(fromId);
+             userRepo.save(userFrom);
+             userRepo.save(userTo);
+             return ResponseEntity.status(HttpStatus.CREATED).body("Friend request sent");
+         }catch (Exception e){
+             throw new RuntimeException("Encountering error while sending request:"+e.getMessage());
+         }
+    }
+
+    //accept request
+    public ResponseEntity<?> acceptRequest(String fromId, String toId){
+        try{
+            if(fromId.equals(toId)){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Can not accept request to yourself.");
+            }
+            User userFrom=userRepo.findById(fromId).orElseThrow(()->new RuntimeException("Sender not found!"));
+            User userTo=userRepo.findById(toId).orElseThrow(()->new RuntimeException("Receiver not found!"));
+
+            userFrom.getFriendList().add(toId);
+            userTo.getFriendList().add(fromId);
+            userRepo.save(userFrom);
+            userRepo.save(userTo);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Friend request sent");
+        }catch (Exception e){
+            throw new RuntimeException("Encountering error while accepting request:"+e.getMessage());
+        }
+    }
+    //decline request
+    public ResponseEntity<?> declineRequest(String fromId, String toId){
+        try{
+            if(fromId.equals(toId)){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Can not decline request to yourself.");
+            }
+            User userFrom=userRepo.findById(fromId).orElseThrow(()->new RuntimeException("Sender not found!"));
+            User userTo=userRepo.findById(toId).orElseThrow(()->new RuntimeException("Receiver not found!"));
+
+
+            userFrom.getSendRequest().remove(toId);
+            userTo.getInboxRequest().remove(fromId);
+            userRepo.save(userFrom);
+            userRepo.save(userTo);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Friend request declined");
+        }catch (Exception e){
+            throw new RuntimeException("Encountering error while declining request:"+e.getMessage());
+        }
+    }
+    //fetch sendRequest
+    public ResponseEntity<?>fetchSendRequest(String userId){
+        try{
+            User userFrom=userRepo.findById(userId).orElseThrow(()->new RuntimeException("userId not found!"));
+            return ResponseEntity.status(HttpStatus.OK).body(userFrom.getSendRequest());
+        }catch (Exception e){
+            throw new RuntimeException("Encountering error while fetching send request:"+e.getMessage());
+        }
+    }
+    //fetch receivedRequest
+    public ResponseEntity<?>fetchReceivedRequest(String userId){
+        try{
+            User userFrom=userRepo.findById(userId).orElseThrow(()->new RuntimeException("userId not found!"));
+            return ResponseEntity.status(HttpStatus.OK).body(userFrom.getInboxRequest());
+        }catch (Exception e){
+            throw new RuntimeException("Encountering error while fetching received request:"+e.getMessage());
+        }
+    }
+    //fetch declinedRequest
+    public ResponseEntity<?>fetchDeclinedRequest(String userId){
+        try{
+            User userFrom=userRepo.findById(userId).orElseThrow(()->new RuntimeException("userId not found!"));
+            return ResponseEntity.status(HttpStatus.OK).body(userFrom.getDeclinedRequest());
+        }catch (Exception e){
+            throw new RuntimeException("Encountering error while fetching declined request:"+e.getMessage());
+        }
+    }
+    //fetch friendsList
+    public ResponseEntity<?>fetchFriendsList(String userId){
+        try{
+            User userFrom=userRepo.findById(userId).orElseThrow(()->new RuntimeException("userId not found!"));
+            return ResponseEntity.status(HttpStatus.OK).body(userFrom.getFriendList());
+        }catch (Exception e){
+            throw new RuntimeException("Encountering error while fetching friendsList:"+e.getMessage());
+        }
+    }
+
+
 }

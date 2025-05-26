@@ -1,6 +1,5 @@
 package com.GroupChatAppexample.GroupChat.config;
 
-
 import com.GroupChatAppexample.GroupChat.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -13,55 +12,75 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.Random;
+
 @Component
-public class EmailSender
-{
-  @Autowired
-  private JavaMailSender javaMailSender;
-  @Autowired
-  private StringRedisTemplate redisTemplate;
-  @Lazy
-  @Autowired
-  private UserService userService;
+public class EmailSender {
 
-  //send OTP to the userEmailID
-  public ResponseEntity<?> sendOTPtoEmailID(String emailID){
-      try{
-          Random random=new Random();
-          int OTP = 100000+ random.nextInt(90000);
-          SimpleMailMessage simpleMailMessage=new SimpleMailMessage();
-          simpleMailMessage.setTo(emailID);
-          simpleMailMessage.setSubject("Thank you for signing up: GroupChatApp");
-          simpleMailMessage.setText("Your OTP is: " + OTP);
-          javaMailSender.send(simpleMailMessage);
-          // Store OTP in Redis with 5-minute expiry
-          String key = "OTP:" + emailID;
-          redisTemplate.opsForValue().set(key,String.valueOf(OTP), Duration.ofMinutes(5L));
-          return ResponseEntity.status(HttpStatus.CREATED).body("OTP sent successfully!");
-      }catch (Exception e){
-          throw new RuntimeException("Encountering error while sending OTP to:"+emailID);
-      }
-  }
+    @Autowired
+    private JavaMailSender javaMailSender;
 
-    //verify userOTP
-    public ResponseEntity<?>verifyEmailOTP(String emailID){
-        try{
-            String key = "OTP:" + emailID;
-            String storedOTP = redisTemplate.opsForValue().get(key);
-            // OTP not found or expired
-            if(storedOTP==null){
-              return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body("OTP has expired. Please request a new one.");
-            }
-            // Incorrect OTP
-            if(!storedOTP.equals(storedOTP)){
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Incorrect OTP entered");
-            }
-            // Optionally delete OTP after successful verification
-            redisTemplate.delete(key);
-            userService.createUserAccount(emailID);
-            return ResponseEntity.status(HttpStatus.OK).body("OTP verified successfully!");
-        }catch(Exception e){ throw new RuntimeException("Encountering error while verifying OTP to:"+emailID);}
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
+    @Lazy
+    @Autowired
+    private UserService userService;
+
+    // Send OTP to the user's email ID
+    public ResponseEntity<?> sendOTPtoEmailID(String emailID) {
+        try {
+            String normalizedEmail = emailID.trim().toLowerCase();
+
+            Random random = new Random();
+            int OTP = 100000 + random.nextInt(900000); // Generates 6-digit OTP
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(normalizedEmail);
+            message.setSubject("Thank you for signing up: GroupChatApp");
+            message.setText("Your OTP is: " + OTP);
+
+            javaMailSender.send(message);
+
+            String key = "OTP:" + normalizedEmail;
+            redisTemplate.opsForValue().set(key, String.valueOf(OTP), Duration.ofMinutes(5));
+
+            System.out.println("OTP stored in Redis for " + normalizedEmail + ": " + OTP);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body("OTP sent successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to send OTP to " + emailID);
+        }
     }
 
+    // Verify OTP entered by the user
+    public ResponseEntity<?> verifyEmailOTP(String emailID, String userEnteredOTP) {
+        try {
+            String normalizedEmail = emailID.trim().toLowerCase();
+            String key = "OTP:" + normalizedEmail;
 
+            String storedOTP = redisTemplate.opsForValue().get(key);
+
+            System.out.println("Stored OTP for " + normalizedEmail + ": " + storedOTP);
+
+            if (storedOTP == null || storedOTP.isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("OTP has expired or is invalid. Please request a new one.");
+            }
+
+            if (!storedOTP.equals(userEnteredOTP)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid OTP.");
+            }
+
+            redisTemplate.delete(key);
+            userService.createUserAccount(normalizedEmail);
+
+            return ResponseEntity.ok("OTP verified successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error verifying OTP for: " + emailID);
+        }
+    }
 }
