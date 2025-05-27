@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/user")
@@ -41,33 +42,57 @@ public class UserController {
 
     @Operation(summary = "signIn/SignUp to user")
     @PostMapping("/login")
-    public ResponseEntity<?> sendOTPtoEmailID(@RequestParam(required = true) String emailId, @RequestParam(required = false) String OTP) {
+    public ResponseEntity<?> sendOTPtoEmailID(@RequestParam(required = true) String emailId) {
         try {
-            if(OTP==null||OTP.isEmpty()){
-                return userService.sendOTP(emailId);
-            }else{
-                User user=userRepo.findByEmailId(emailId).orElseThrow(()->new RuntimeException("User not found with emailId:"+emailId));
-                if(emailSender.verifyEmailOTP(emailId,OTP).getStatusCode().equals(HttpStatus.OK)){
-                    String token = jwtGenerator.generateToken(emailId,user.getUserRole().toString());
-                    user.setActiveToken(token);
-                    userRepo.save(user);
-                    System.out.println("Bearer " + token);
-                    // ✅ Return the token in the response
-                    return ResponseEntity.status(HttpStatus.OK).body(
-                            Map.of(
-                                    "message", "User login successful!",
-                                    "token", "Bearer " + token,
-                                    "email", user.getEmailId(),
-                                    "role", user.getUserRole()
-                            )
-                    );
-                }
+            Optional<User> user = userRepo.findByEmailId(emailId);
+            if (user.isPresent()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User already exist with given id:" + emailId);
             }
+
+            return userService.sendOTP(emailId);
+
+//            }else{
+//                User user=userRepo.findByEmailId(emailId).orElseThrow(()->new RuntimeException("User not found with emailId:"+emailId));
+//                if(emailSender.verifyEmailOTP(emailId,OTP).getStatusCode().equals(HttpStatus.OK)){
+//                    String token = jwtGenerator.generateToken(emailId,user.getUserRole().toString());
+//                    user.setActiveToken(token);
+//                    userRepo.save(user);
+//                    System.out.println("Bearer " + token);
+//                    // ✅ Return the token in the response
+//                    return ResponseEntity.status(HttpStatus.OK).body(
+//                            Map.of(
+//                                    "message", "User login successful!",
+//                                    "token", "Bearer " + token,
+//                                    "email", user.getEmailId(),
+//                                    "role", user.getUserRole()
+//                            )
+//                    );
+//                }
+//            }
 
         } catch (Exception e) {
             throw new RuntimeException("Error in sending OTP to the user!");
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User login failed!");
+    }
+
+    @Operation(summary = "verifyOTP")
+    @PostMapping("/verifyOTP")
+    public ResponseEntity<?>verifyOTP(@RequestParam(required = true) String emailId, @RequestParam(required = true) String OTP)
+    {
+        try{
+          Optional<User>user=userRepo.findByEmailId(emailId);
+          if(user.isPresent()){
+              return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User already exist with given id:" + emailId);
+          }
+          if(emailSender.verifyEmailOTP(emailId,OTP).getStatusCode().equals(HttpStatus.OK)){
+              Optional<User>user1=userRepo.findByEmailId(emailId);
+              User user2=user.get();
+              System.out.println(user2.getUserRole());
+          }
+
+        }catch (Exception e){
+            throw new RuntimeException("Error in sending OTP to the user!"+e.getMessage());
+        }
     }
 
     @GetMapping("/login-google")
