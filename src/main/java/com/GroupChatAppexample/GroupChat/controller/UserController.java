@@ -156,7 +156,7 @@ public class UserController {
             User user=userData.get();
             user.setProfilePicture(null);
             userRepo.save(user);
-         return ResponseEntity.status(HttpStatus.ACCEPTED).body("user Dp removed from profile successfully!");
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body("user Dp removed from profile successfully!");
         }catch (Exception e){
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to remove dp-image");
@@ -204,11 +204,11 @@ public class UserController {
     }
 
 
-   //fetch userProfile DP
+    //fetch userProfile DP
     @GetMapping("/profile-image")
     public ResponseEntity<?>getProfileDP(@RequestParam(required = true) String path) throws MalformedURLException, FileNotFoundException {
-       Path imagePath= Paths.get("uploads/profileImages").resolve(path).normalize();
-       //now load the path with requested imagePath
+        Path imagePath= Paths.get("uploads/profileImages").resolve(path).normalize();
+        //now load the path with requested imagePath
         Resource resource = (Resource) new UrlResource(imagePath.toUri());
         if (resource==null) {
             throw new FileNotFoundException("Image not found");
@@ -237,18 +237,18 @@ public class UserController {
         return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(imageBytes);
     }
 
-  //fetch user by userId
-  @Operation(summary = "fetchUserByUserId")
-  @GetMapping("/fetchUserByUserId/{userId}")
-  public List<Map<String,String>> fetchUserById(@PathVariable(required = true) String userId){
+    //fetch user by userId
+    @Operation(summary = "fetchUserByUserId")
+    @GetMapping("/fetchUserByUserId/{userId}")
+    public List<Map<String,String>> fetchUserById(@PathVariable(required = true) String userId){
         return userService.fetchUserByUserId(userId);
-  }
+    }
 
     // Fetch other user's data with their friendship status relative to the current user
     @Operation(summary = "Fetch friendship-status")
     @GetMapping("/friendship-status")
     public List<Map<String,String>>checkFriendshipStatus(@RequestParam(required = true)String currentUserId,@RequestParam(required = true)String otherUserId){
-         return userService.checkFriendShipStatus(currentUserId,otherUserId);
+        return userService.checkFriendShipStatus(currentUserId,otherUserId);
     }
 
     //Decline a friend request

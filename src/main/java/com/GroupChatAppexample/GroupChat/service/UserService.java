@@ -62,74 +62,74 @@ public class UserService {
     //update profile
     public ResponseEntity<?> updateUserProfile (String userJSON, String emailId, MultipartFile imageFile)
     {
-     try{
-           User user=userRepo.findByEmailId(emailId).orElseThrow(()->new RuntimeException("User not found with given emailId:"+emailId));
-           ObjectMapper objectMapper=new ObjectMapper();
-           UserDTO userDTO=objectMapper.readValue(userJSON,UserDTO.class);
+        try{
+            User user=userRepo.findByEmailId(emailId).orElseThrow(()->new RuntimeException("User not found with given emailId:"+emailId));
+            ObjectMapper objectMapper=new ObjectMapper();
+            UserDTO userDTO=objectMapper.readValue(userJSON,UserDTO.class);
 
-         System.out.println("imageFile == null: " + (imageFile == null));
-         System.out.println("imageFile isEmpty: " + (imageFile != null && imageFile.isEmpty()));
+            System.out.println("imageFile == null: " + (imageFile == null));
+            System.out.println("imageFile isEmpty: " + (imageFile != null && imageFile.isEmpty()));
 
-           if(imageFile!=null  && !imageFile.isEmpty()){
+            if(imageFile!=null  && !imageFile.isEmpty()){
 
-               // if user profile already exist
-               String oldProfile=user.getProfilePicture();
-               if(oldProfile!=null){
+                // if user profile already exist
+                String oldProfile=user.getProfilePicture();
+                if(oldProfile!=null){
                     File oldDp=new File("."+oldProfile);
                     if(oldDp.exists()){
                         oldDp.delete();
                     }
-               }
-               System.out.printf("Image size (MB): %.2f MB%n", imageFile.getSize()/(1024.0*1024.0));
-               if(!imageFile.getContentType().startsWith("image/")) {
-                   return ResponseEntity.badRequest().body("Only image files allowed");
-               }
+                }
+                System.out.printf("Image size (MB): %.2f MB%n", imageFile.getSize()/(1024.0*1024.0));
+                if(!imageFile.getContentType().startsWith("image/")) {
+                    return ResponseEntity.badRequest().body("Only image files allowed");
+                }
 
-              //create folder
-               File uploadDirectory=new File("uploads/profileImages/");
-               if(!uploadDirectory.exists()){
-                   uploadDirectory.mkdirs();
-               }
+                //create folder
+                File uploadDirectory=new File("uploads/profileImages/");
+                if(!uploadDirectory.exists()){
+                    uploadDirectory.mkdirs();
+                }
 
-               //now create unique file name
-               String fileName="profile_"+user.getId()+"_"+System.currentTimeMillis()+".jpg";
-               File destinationPath=new File(uploadDirectory,fileName);
-               System.out.println("Working Dir: " + System.getProperty("user.dir"));
-               System.out.println("Destination Path: " + destinationPath.getAbsolutePath());
-               try (InputStream inputStream = imageFile.getInputStream();
-                    FileOutputStream outputStream = new FileOutputStream(destinationPath)) {
+                //now create unique file name
+                String fileName="profile_"+user.getId()+"_"+System.currentTimeMillis()+".jpg";
+                File destinationPath=new File(uploadDirectory,fileName);
+                System.out.println("Working Dir: " + System.getProperty("user.dir"));
+                System.out.println("Destination Path: " + destinationPath.getAbsolutePath());
+                try (InputStream inputStream = imageFile.getInputStream();
+                     FileOutputStream outputStream = new FileOutputStream(destinationPath)) {
 
-                   byte[] buffer = new byte[1024];
-                   int bytesRead;
-                   while ((bytesRead = inputStream.read(buffer)) != -1) {
-                       outputStream.write(buffer, 0, bytesRead);
-                   }
-               }
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                }
 
-               user.setProfilePicture("/uploads/profileImages/" + fileName);
-           }
-
-
-           Optional<User>userExitinuser=userRepo.findByUserName(userDTO.getUserName());
-           if(userExitinuser.isPresent() && !userExitinuser.get().getEmailId().equalsIgnoreCase(emailId)){
-             throw new RuntimeException("This userName name is already used by someone else!");
-           }
+                user.setProfilePicture("/uploads/profileImages/" + fileName);
+            }
 
 
-         user.setUserName(userDTO.getUserName());
-         user.setFullName(userDTO.getFullName());
-         user.setPhoneNumber(userDTO.getPhoneNumber());
-         user.setBio(userDTO.getBio());
-         user.setUpdatedTime(LocalDateTime.now());
-
-         userRepo.save(user);
-
-         return ResponseEntity.ok("Profile picture updated successfully");
+            Optional<User>userExitinuser=userRepo.findByUserName(userDTO.getUserName());
+            if(userExitinuser.isPresent() && !userExitinuser.get().getEmailId().equalsIgnoreCase(emailId)){
+                throw new RuntimeException("This userName name is already used by someone else!");
+            }
 
 
-     }catch (Exception e){
-         throw  new RuntimeException(e.getMessage());
-     }
+            user.setUserName(userDTO.getUserName());
+            user.setFullName(userDTO.getFullName());
+            user.setPhoneNumber(userDTO.getPhoneNumber());
+            user.setBio(userDTO.getBio());
+            user.setUpdatedTime(LocalDateTime.now());
+
+            userRepo.save(user);
+
+            return ResponseEntity.ok("Profile picture updated successfully");
+
+
+        }catch (Exception e){
+            throw  new RuntimeException(e.getMessage());
+        }
     }
 
     //helper function for friendRequest status
@@ -139,42 +139,42 @@ public class UserService {
 
     //send Request
     public ResponseEntity<?> sendRequest(String fromId, String toId){
-         try{
+        try{
             if(fromId.equals(toId)){
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Can not send request to yourself.");
             }
-             User userFrom=userRepo.findById(fromId).orElseThrow(()->new RuntimeException("Sender not found!"));
-             User userTo=userRepo.findById(toId).orElseThrow(()->new RuntimeException("Receiver not found!"));
+            User userFrom=userRepo.findById(fromId).orElseThrow(()->new RuntimeException("Sender not found!"));
+            User userTo=userRepo.findById(toId).orElseThrow(()->new RuntimeException("Receiver not found!"));
 
-             if(findByUserId(userFrom.getSentRequest(),toId)!=null){
-                  return declineRequest(fromId,toId);
-             }
-             if(findByUserId(userFrom.getInboxRequest(),toId)!=null){
-                 return acceptRequest(toId,fromId);
-             }
-             //sender
-             FriendMetaData f1=new FriendMetaData();
-             f1.setUserId(toId);
-             f1.setUserName(userTo.getUserName());
-             f1.setStatus("sent");
-             f1.setTimeStamp(LocalDateTime.now());
-             //receiver
-             FriendMetaData f2=new FriendMetaData();
-             f2.setUserId(fromId);
-             f2.setUserName(userFrom.getUserName());
-             f2.setStatus("inbox");
-             f2.setTimeStamp(LocalDateTime.now());
+            if(findByUserId(userFrom.getSentRequest(),toId)!=null){
+                return declineRequest(fromId,toId);
+            }
+            if(findByUserId(userFrom.getInboxRequest(),toId)!=null){
+                return acceptRequest(toId,fromId);
+            }
+            //sender
+            FriendMetaData f1=new FriendMetaData();
+            f1.setUserId(toId);
+            f1.setUserName(userTo.getUserName());
+            f1.setStatus("sent");
+            f1.setTimeStamp(LocalDateTime.now());
+            //receiver
+            FriendMetaData f2=new FriendMetaData();
+            f2.setUserId(fromId);
+            f2.setUserName(userFrom.getUserName());
+            f2.setStatus("inbox");
+            f2.setTimeStamp(LocalDateTime.now());
 
-             userFrom.getSentRequest().add(f1);
-             userTo.getInboxRequest().add(f2);
+            userFrom.getSentRequest().add(f1);
+            userTo.getInboxRequest().add(f2);
 
-             userRepo.save(userFrom);
-             userRepo.save(userTo);
+            userRepo.save(userFrom);
+            userRepo.save(userTo);
 
-             return ResponseEntity.status(HttpStatus.CREATED).body("Friend request sent");
-         }catch (Exception e){
-             throw new RuntimeException("Encountering error while sending request:"+e.getMessage());
-         }
+            return ResponseEntity.status(HttpStatus.CREATED).body("Friend request sent");
+        }catch (Exception e){
+            throw new RuntimeException("Encountering error while sending request:"+e.getMessage());
+        }
     }
 
     //accept request
@@ -298,7 +298,7 @@ public class UserService {
                 mp.put("profilePictureUrl", "/images/profile/" + user.getId());
                 String status;
                 if(findByUserId(currentUser.getFriendList(),user.getId())!=null){
-                     status="friend";
+                    status="friend";
                 }else if(findByUserId(currentUser.getSentRequest(),user.getId())!=null){
                     status="requested";
                 }else{

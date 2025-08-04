@@ -18,23 +18,23 @@ public class SecurityConfig
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-       return httpSecurity
-               .csrf(AbstractHttpConfigurer::disable)
-               .authorizeHttpRequests(auth-> auth
-                       .requestMatchers(
-                               "/swagger-ui/**", "/v3/api-docs/**",
-                               "/user/login",
-                               "/user/verify-OTP",
-                               "/user/generate-token",
-                               "/ws-chat/**", "/history/**",
-                               "/user/images/profile/**"
+        return httpSecurity
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth-> auth
+                        .requestMatchers(
+                                "/swagger-ui/**", "/v3/api-docs/**",
+                                "/user/login",
+                                "/user/verify-OTP",
+                                "/user/generate-token",
+                                "/ws-chat/**", "/history/**",
+                                "/user/images/profile/**"
 
-                       )
-                       .permitAll()
-                .anyRequest().authenticated()
-        )
-               .addFilterBefore(jwtValidate, UsernamePasswordAuthenticationFilter.class)
-               .build();
+                        )
+                        .permitAll()
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtValidate, UsernamePasswordAuthenticationFilter.class)
+                .build();
     }
 
 

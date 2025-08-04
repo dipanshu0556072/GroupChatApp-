@@ -27,8 +27,7 @@ public class UserChatHistoryController
     private PersonalChatService personalChatService;
     @Autowired
     private UserRepo userRepo;
-    @Autowired
-    private UserController userController;
+
 
     @Autowired
     private JwtGenerator jwtGenerator;

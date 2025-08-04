@@ -21,17 +21,13 @@ public class JwtGenerator
    private String tokenValidity;
 
     public String generateToken(String emailId, String role) {
-        long validityInMillis = Long.parseLong(tokenValidity);
-
         return Jwts.builder()
                 .setSubject(emailId)
                 .claim("role", role)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + validityInMillis))
                 .signWith(SignatureAlgorithm.HS256, jwtDecodedSignKey())
                 .compact();
     }
-
 
    public Key jwtDecodedSignKey(){
        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
@@ -54,7 +50,6 @@ public class JwtGenerator
        return Jwts.parser().setSigningKey(jwtDecodedSignKey()).parseClaimsJws(token).getBody().getSubject();
     }
 
-    //validate the tokenÏ
     public boolean validateUserAndToken(String inputUserName, String token){
           Claims claims=Jwts.parser().setSigningKey(jwtDecodedSignKey()).parseClaimsJws(token).getBody();
           return claims.getSubject().equals(inputUserName) && !isTokenExpired(token);

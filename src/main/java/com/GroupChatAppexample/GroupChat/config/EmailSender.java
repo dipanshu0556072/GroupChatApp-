@@ -41,9 +41,6 @@ public class EmailSender {
 
             javaMailSender.send(message);
 
-            System.out.println("Email sending skipped for AWS test.");
-
-
             String key = "OTP:" + normalizedEmail;
             redisTemplate.opsForValue().set(key, String.valueOf(OTP), Duration.ofMinutes(5));
 

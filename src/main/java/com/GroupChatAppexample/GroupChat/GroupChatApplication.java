@@ -2,13 +2,10 @@ package com.GroupChatAppexample.GroupChat;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableAsync;
 
 import java.security.NoSuchAlgorithmException;
 
 @SpringBootApplication
-@EnableAsync
-
 public class GroupChatApplication {
 
 	public static void main(String[] args) throws NoSuchAlgorithmException {
@@ -18,8 +15,6 @@ public class GroupChatApplication {
 //		SecretKey secretKey = keyGen.generateKey();
 	//		String encodedKey = Base64.getEncoder().encodeToString(secretKey.getEncoded());
 	//
-	//		System.out.println("Generated Secret Key: " + encodedKey);x`
-
 
 	}
 
