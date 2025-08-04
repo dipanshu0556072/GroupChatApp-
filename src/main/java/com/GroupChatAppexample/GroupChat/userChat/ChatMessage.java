@@ -1,9 +1,8 @@
 package com.GroupChatAppexample.GroupChat.userChat;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -14,7 +13,7 @@ public class ChatMessage {
     private String from;
     private String to;
     private String content;
-    private long timestamp;
+    private Long timestamp;
     private String messageType;
     private String status;
     private boolean isGroupMessage;

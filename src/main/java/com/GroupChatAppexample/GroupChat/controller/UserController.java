@@ -7,11 +7,14 @@ import com.GroupChatAppexample.GroupChat.repo.UserRepo;
 import com.GroupChatAppexample.GroupChat.service.UserService;
 import com.GroupChatAppexample.GroupChat.config.EmailSender;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +25,13 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -43,6 +52,9 @@ public class UserController {
 
     @Autowired
     private JwtGenerator jwtGenerator;
+
+    @Autowired
+    private ResourceLoader resourceLoader;
 
 
     @Operation(summary = "signIn/SignUp to user")
@@ -192,48 +204,59 @@ public class UserController {
     }
 
 
-    // 💬 Friend Request APIs
-    @Operation(summary = "Send a friend request")
-    @PostMapping("/send-request")
-    public ResponseEntity<?> sendRequest(@RequestParam String fromId, @RequestParam String toId) {
-        return userService.sendRequest(fromId, toId);
+   //fetch userProfile DP
+    @GetMapping("/profile-image")
+    public ResponseEntity<?>getProfileDP(@RequestParam(required = true) String path) throws MalformedURLException, FileNotFoundException {
+       Path imagePath= Paths.get("uploads/profileImages").resolve(path).normalize();
+       //now load the path with requested imagePath
+        Resource resource = (Resource) new UrlResource(imagePath.toUri());
+        if (resource==null) {
+            throw new FileNotFoundException("Image not found");
+        }
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(resource);
     }
 
-    @Operation(summary = "Accept a friend request")
-    @PostMapping("/accept-request")
-    public ResponseEntity<?> acceptRequest(@RequestParam String fromId, @RequestParam String toId) {
-        return userService.acceptRequest(fromId, toId);
+
+
+
+
+
+
+    @Operation(summary = "allUserList")
+    @GetMapping("/suggestionList/{userId}")
+    public List<Map<String,String>> friendSuggestList(@PathVariable(required=true) String userId){
+        return userService.friendSuggestList(userId);
     }
 
+    @GetMapping(value = "/images/profile/{userId}", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<byte[]> getProfilePicture(@PathVariable String userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        byte[] imageBytes = Base64.getDecoder().decode(user.getProfilePicture());
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(imageBytes);
+    }
+
+  //fetch user by userId
+  @Operation(summary = "fetchUserByUserId")
+  @GetMapping("/fetchUserByUserId/{userId}")
+  public List<Map<String,String>> fetchUserById(@PathVariable(required = true) String userId){
+        return userService.fetchUserByUserId(userId);
+  }
+
+    // Fetch other user's data with their friendship status relative to the current user
+    @Operation(summary = "Fetch friendship-status")
+    @GetMapping("/friendship-status")
+    public List<Map<String,String>>checkFriendshipStatus(@RequestParam(required = true)String currentUserId,@RequestParam(required = true)String otherUserId){
+         return userService.checkFriendShipStatus(currentUserId,otherUserId);
+    }
+
+    //Decline a friend request
     @Operation(summary = "Decline a friend request")
     @PostMapping("/decline-request")
-    public ResponseEntity<?> declineRequest(@RequestParam String fromId, @RequestParam String toId) {
+    public ResponseEntity<?> declineFriendRequest(@RequestParam String fromId, @RequestParam String toId) {
         return userService.declineRequest(fromId, toId);
     }
 
-    @Operation(summary = "Fetch list of sent friend requests")
-    @GetMapping("/sent-requests/{userId}")
-    public ResponseEntity<?> fetchSentRequests(@PathVariable String userId) {
-        return userService.fetchSendRequest(userId);
-    }
-
-    @PreAuthorize("hasRole('user')")
-    @Operation(summary = "Fetch list of received friend requests")
-    @GetMapping("/received-requests/{userId}")
-    public ResponseEntity<?> fetchReceivedRequests(@PathVariable String userId) {
-        return userService.fetchReceivedRequest(userId);
-    }
-
-    @Operation(summary = "Fetch list of declined friend requests")
-    @GetMapping("/declined-requests/{userId}")
-    public ResponseEntity<?> fetchDeclinedRequests(@PathVariable String userId) {
-        return userService.fetchDeclinedRequest(userId);
-    }
-
-    @Operation(summary = "Fetch friend list of a user")
-    @GetMapping("/friends/{userId}")
-    public ResponseEntity<?> fetchFriendsList(@PathVariable String userId) {
-        return userService.fetchFriendsList(userId);
-    }
 
 }

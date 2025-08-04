@@ -1,11 +1,13 @@
 package com.GroupChatAppexample.GroupChat.model;
 
+import com.GroupChatAppexample.GroupChat.DTO.FriendMetaData;
 import com.GroupChatAppexample.GroupChat.config.Roles;
 import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Data
@@ -28,12 +30,14 @@ public class User {
     private String activeToken;
 
     //friendList
-    private Set<String>friendList=new HashSet<>();
+    private Set<FriendMetaData>friendList=new HashSet<>();
     //send request
-    private Set<String>sendRequest=new HashSet<>();
+    private Set<FriendMetaData>sentRequest=new HashSet<>();
     //inbox request
-    private Set<String>inboxRequest=new HashSet<>();
-    //declined request
-    private Set<String>declinedRequest=new HashSet<>();
+    private Set<FriendMetaData>inboxRequest=new HashSet<>();
+    //block user
+    private Set<FriendMetaData>blockUser=new HashSet<>();
+
+
 
 }

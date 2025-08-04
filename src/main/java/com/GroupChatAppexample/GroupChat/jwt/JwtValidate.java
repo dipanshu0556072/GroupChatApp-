@@ -48,18 +48,35 @@ public class JwtValidate extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        String token = null;
 
+        // ✅ 1️⃣ Try header
         String authHeader = request.getHeader("Authorization");
-
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
+            token = authHeader.substring(7);
+        }
+
+        // ✅ 2️⃣ If no header, try query param ?token=...
+        if (token == null) {
+            String query = request.getQueryString(); // e.g. token=abc123
+            if (query != null) {
+                for (String param : query.split("&")) {
+                    if (param.startsWith("token=")) {
+                        token = param.substring(6);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (token != null) {
             String email = jwtGenerator.extractUserName(token);
             String role = jwtGenerator.extractUserRole(token);
-            System.out.println(email+" \n"+token+"\n"+role);
+            System.out.println(email + "\n" + token + "\n" + role);
 
             User user = userRepo.findByEmailId(email).orElse(null);
 
-            //refresh the token
+            // ✅ Refresh token logic (unchanged)
             if (user != null && jwtGenerator.isTokenExpired(token)) {
                 String newToken = jwtGenerator.generateToken(email, role);
                 user.setActiveToken(newToken);
@@ -67,6 +84,7 @@ public class JwtValidate extends OncePerRequestFilter {
                 response.setHeader("Authorization", "Bearer " + newToken);
                 token = newToken;
             }
+
 
             if (user != null && token.equals(user.getActiveToken())) {
                 if (jwtGenerator.validateUserAndToken(email, token)) {
@@ -84,4 +102,5 @@ public class JwtValidate extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
 }

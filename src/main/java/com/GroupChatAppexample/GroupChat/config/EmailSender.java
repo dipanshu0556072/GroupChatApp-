@@ -39,10 +39,13 @@ public class EmailSender {
             message.setSubject("Thank you for signing up: GroupChatApp");
             message.setText("Your OTP is: " + OTP);
 
-//            javaMailSender.send(message);
-//
-//            String key = "OTP:" + normalizedEmail;
-//            redisTemplate.opsForValue().set(key, String.valueOf(OTP), Duration.ofMinutes(5));
+            javaMailSender.send(message);
+
+            System.out.println("Email sending skipped for AWS test.");
+
+
+            String key = "OTP:" + normalizedEmail;
+            redisTemplate.opsForValue().set(key, String.valueOf(OTP), Duration.ofMinutes(5));
 
             System.out.println("OTP stored in Redis for " + normalizedEmail + ": " + OTP);
 

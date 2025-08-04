@@ -26,7 +26,9 @@ public class SecurityConfig
                                "/user/login",
                                "/user/verify-OTP",
                                "/user/generate-token",
-                               "/ws-chat/**", "/history/**"
+                               "/ws-chat/**", "/history/**",
+                               "/user/images/profile/**"
+
                        )
                        .permitAll()
                 .anyRequest().authenticated()
